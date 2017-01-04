@@ -1,0 +1,9 @@
+{
+	"Functions": {
+		"GET foo/": [ "GET foo/foo", "PUT foo/bar" ],
+		"GET foo/foo": [ "CALL lookup_data" ],
+		"PUT foo/bar": [ "POST foo/baz" ],
+		"POST foo/baz": [ "GET foo/foo" ],
+		"CALL lookup_data": [ "DATA SET1", "DATA SET2", "DATA SET3" ]
+	}
+}

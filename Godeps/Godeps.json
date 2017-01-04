@@ -1,0 +1,24 @@
+{
+	"ImportPath": "github.com/tgraf/svcsim",
+	"GoVersion": "go1.6",
+	"GodepVersion": "v74",
+	"Packages": [
+		"."
+	],
+	"Deps": [
+		{
+			"ImportPath": "github.com/mailgun/manners",
+			"Comment": "0.3.1-40-ga585afd",
+			"Rev": "a585afd9d65c0e05f6c003f921e71ebc05074f4f"
+		},
+		{
+			"ImportPath": "github.com/op/go-logging",
+			"Rev": "0882c9abce533ab4afbab5677fcef7434dd36d5a"
+		},
+		{
+			"ImportPath": "github.com/urfave/cli",
+			"Comment": "v1.19.1",
+			"Rev": "0bdeddeeb0f650497d603c4ad7b20cfe685682f6"
+		}
+	]
+}
