@@ -59,6 +59,10 @@ func handler(w http.ResponseWriter, req *http.Request) {
 		host = req.Host
 	}
 
+	if req.Header.Get("NoOperation") != "" {
+		return
+	}
+
 	uri := host + req.URL.Path
 	fmt.Fprintf(w, "{%s: [", JSON(fmt.Sprintf("%s RESP %s", req.Method, uri)))
 
@@ -68,6 +72,9 @@ func handler(w http.ResponseWriter, req *http.Request) {
 		fmt.Fprintf(w, "%s", JSON(err.Error()))
 	} else if def == nil {
 		fmt.Fprintf(w, "%s", JSON(fmt.Sprintf("Function %s not found", funcName)))
+	} else if req.Header.Get("NeighbourConnectivity") != "" {
+		log.Infof("Function %+v neighbor connectivity")
+		NeighborConnectivity(w, req, def)
 	} else if req.Header.Get("Exploit") != "" {
 		log.Infof("Function %+v being exploited", def)
 		exploitCalls := Exploit(w, req, def)

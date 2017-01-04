@@ -165,3 +165,49 @@ func Exploit(w http.ResponseWriter, req *http.Request, ownFunc FuncDef) int {
 
 	return calls
 }
+
+func (f FuncHttp) Ping(w http.ResponseWriter, req *http.Request) {
+	client := &http.Client{}
+
+	key := JSON(fmt.Sprintf("%s %s", f.method, f.uri))
+	url := fmt.Sprintf("http://%s", f.uri)
+	outReq, err := http.NewRequest(f.method, url, nil)
+	if err != nil {
+		fmt.Fprintf(w, "{%s: [%s]}", key, JSON(err.Error()))
+		return
+	}
+
+	outReq.Header.Set("NoOperation", "True")
+
+	_, err = client.Do(outReq)
+	if err != nil {
+		fmt.Fprintf(w, "{%s: %s}", key, JSON(err.Error()))
+	} else {
+		fmt.Fprintf(w, "{%s: %s}", key, JSON("OK"))
+	}
+}
+
+func NeighborConnectivity(w http.ResponseWriter, req *http.Request, ownFunc FuncDef) int {
+	funcs := GetHttpFuncs()
+	calls := 0
+
+	for k, _ := range funcs {
+		if k.String() == ownFunc.String() {
+			log.Infof("Ignoring function \"%s\" (own)", k.String())
+			continue
+		}
+		if funcInHeader(req, k.String()) {
+			log.Infof("Ignoring function \"%s\" (found in stack)", k.String())
+			continue
+		}
+
+		if calls > 0 {
+			fmt.Fprintf(w, ",")
+		}
+
+		calls++
+		funcs[k].Ping(w, req)
+	}
+
+	return calls
+}
