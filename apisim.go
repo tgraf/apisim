@@ -68,6 +68,15 @@ func handler(w http.ResponseWriter, req *http.Request) {
 		fmt.Fprintf(w, "%s", JSON(err.Error()))
 	} else if def == nil {
 		fmt.Fprintf(w, "%s", JSON(fmt.Sprintf("Function %s not found", funcName)))
+	} else if req.Header.Get("Exploit") != "" {
+		log.Infof("Function %+v being exploited", def)
+		exploitCalls := Exploit(w, req, def)
+
+		nonHttpCalls := calls.NonHttp()
+		if len(nonHttpCalls) > 0 && exploitCalls > 0 {
+			fmt.Fprintf(w, ",")
+		}
+		nonHttpCalls.Handle(w, req)
 	} else {
 		log.Infof("Function %+v calls: %+v", def, calls)
 		calls.Handle(w, req)

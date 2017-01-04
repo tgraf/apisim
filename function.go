@@ -10,6 +10,10 @@ import (
 	"strings"
 )
 
+var (
+	FuncStackHeader = http.CanonicalHeaderKey("FuncStack")
+)
+
 func JSON(text string) string {
 	s, _ := json.Marshal(text)
 	return string(s)
@@ -24,6 +28,7 @@ func NewFuncData(data string) FuncData {
 }
 
 func (f FuncData) IsReference() bool { return false }
+func (f FuncData) String() string    { return "DATA " + f.data }
 func (f FuncData) Handle(w http.ResponseWriter, req *http.Request) {
 	fmt.Fprintf(w, "{\"DATA\": %s}", JSON(f.data))
 }
@@ -46,6 +51,7 @@ func (c FuncCalls) Handle(w http.ResponseWriter, req *http.Request) {
 }
 
 func (f FuncCall) IsReference() bool { return true }
+func (f FuncCall) String() string    { return "CALL " + f.name }
 func (f FuncCall) Handle(w http.ResponseWriter, req *http.Request) {
 	key := JSON(fmt.Sprintf("CALL %s", f.name))
 
@@ -63,14 +69,12 @@ func (f FuncCall) Handle(w http.ResponseWriter, req *http.Request) {
 type FuncHttp struct {
 	method string
 	uri    string
-	url    *url.URL
 	host   string
 	port   string
 }
 
 func NewFuncHttp(method string, uri string) (FuncHttp, error) {
-	uri = "http://" + uri
-	url, err := url.Parse(uri)
+	url, err := url.Parse("http://" + uri)
 	if err != nil {
 		return FuncHttp{}, err
 	}
@@ -88,13 +92,13 @@ func NewFuncHttp(method string, uri string) (FuncHttp, error) {
 	return FuncHttp{
 		method: method,
 		uri:    uri,
-		url:    url,
 		host:   host,
 		port:   port,
 	}, nil
 }
 
 func (f FuncHttp) IsReference() bool { return true }
+func (f FuncHttp) String() string    { return fmt.Sprintf("%s %s", f.method, f.uri) }
 func (f FuncHttp) Handle(w http.ResponseWriter, req *http.Request) {
 	client := &http.Client{}
 
@@ -106,6 +110,14 @@ func (f FuncHttp) Handle(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 
+	if req.Header.Get("Exploit") != "" {
+		outReq.Header.Set("Exploit", "True")
+	}
+
+	hdrList, _ := req.Header[FuncStackHeader]
+	hdrList = append(hdrList, f.String())
+	outReq.Header[FuncStackHeader] = hdrList
+
 	resp, err := client.Do(outReq)
 	if err != nil {
 		fmt.Fprintf(w, "{%s: [%s]}", key, JSON(err.Error()))
@@ -115,4 +127,41 @@ func (f FuncHttp) Handle(w http.ResponseWriter, req *http.Request) {
 	fmt.Fprintf(w, "{%s: [", key)
 	io.Copy(w, resp.Body)
 	fmt.Fprintf(w, "]}")
+}
+
+func funcInHeader(req *http.Request, name string) bool {
+	if hdrList, ok := req.Header[FuncStackHeader]; ok {
+		for _, v := range hdrList {
+			if v == name {
+				return true
+			}
+		}
+	}
+
+	return false
+}
+
+func Exploit(w http.ResponseWriter, req *http.Request, ownFunc FuncDef) int {
+	funcs := GetHttpFuncs()
+	calls := 0
+
+	for k, _ := range funcs {
+		if k.String() == ownFunc.String() {
+			log.Infof("Ignoring function \"%s\" (own)", k.String())
+			continue
+		}
+		if funcInHeader(req, k.String()) {
+			log.Infof("Ignoring function \"%s\" (found in stack)", k.String())
+			continue
+		}
+
+		if calls > 0 {
+			fmt.Fprintf(w, ",")
+		}
+
+		calls++
+		funcs[k].Handle(w, req)
+	}
+
+	return calls
 }

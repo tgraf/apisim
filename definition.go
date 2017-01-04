@@ -17,6 +17,7 @@ var (
 type FuncDef interface {
 	IsReference() bool
 	Handle(w http.ResponseWriter, req *http.Request)
+	String() string
 }
 
 type FuncCalls []FuncDef
@@ -80,6 +81,33 @@ func GetUniqueHttpFuncs() (map[string]string, error) {
 	}
 
 	return result, nil
+}
+
+func (c FuncCalls) NonHttp() FuncCalls {
+	res := make(FuncCalls, 0)
+	for k := range c {
+		switch c[k].(type) {
+		case FuncHttp:
+			continue
+		}
+
+		res = append(res, c[k])
+	}
+
+	return res
+}
+
+func GetHttpFuncs() map[FuncDef]FuncHttp {
+	result := make(map[FuncDef]FuncHttp)
+
+	for key, _ := range definitionTree.Funcs {
+		switch key.(type) {
+		case FuncHttp:
+			result[key] = key.(FuncHttp)
+		}
+	}
+
+	return result
 }
 
 func ParseFuncDef(key string) (FuncDef, error) {
