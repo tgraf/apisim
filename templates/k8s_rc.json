@@ -1,0 +1,33 @@
+{
+    "kind":"ReplicationController",
+    "apiVersion":"v1",
+    "metadata":{
+        "name":"{{.Name}}",
+        "labels":{
+            "app":"{{.Name}}"
+        }
+    },
+    "spec":{
+        "replicas":1,
+        "selector":{
+            "app":"{{.Name}}"
+        },
+        "template":{
+            "metadata":{
+                "labels":{
+                    "app":"{{.Name}}"
+                }
+            },
+            "spec":{
+                "containers":[{
+                    "name":"{{.Name}}",
+                    "image":"tgraf/apisim:latest",
+                    "ports":[{
+                        "name":"apisim",
+                        "containerPort":{{.Port}}
+                    }]
+                }]
+            }
+        }
+    }
+}

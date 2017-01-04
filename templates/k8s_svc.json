@@ -1,0 +1,20 @@
+{
+    "kind":"Service",
+    "apiVersion":"v1",
+    "metadata":{
+        "name":"{{.Name}}",
+        "labels":{
+            "app":"{{.Name}}"
+        }
+    },
+    "spec":{
+        "type": "NodePort",
+        "ports": [{
+            "port":{{.Port}},
+            "targetPort":"apisim"
+        }],
+        "selector":{
+            "app":"{{.Name}}"
+        }
+    }
+}

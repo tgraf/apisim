@@ -15,6 +15,7 @@ var (
 	ListenPort int
 	configFile string
 	hostName   string
+	genSpec    bool
 	log        = logging.MustGetLogger("apisim")
 	CliCommand cli.Command
 )
@@ -42,6 +43,11 @@ func main() {
 			Name:        "n, name",
 			Value:       "",
 			Usage:       "Name of this function node",
+		},
+		cli.BoolFlag{
+			Destination: &genSpec,
+			Name:        "generate-k8s-spec",
+			Usage:       "Generate k8s ReplicationController specs",
 		},
 	}
 	app.Run(os.Args)
@@ -77,6 +83,11 @@ func run(cli *cli.Context) {
 
 	if err := ReadConfig(configFile); err != nil {
 		log.Fatal(err)
+	}
+
+	if genSpec {
+		GenerateSpecs()
+		return
 	}
 
 	addr := fmt.Sprintf(":%d", ListenPort)

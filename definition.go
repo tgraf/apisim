@@ -34,11 +34,11 @@ func NewFuncTree() *FuncTree {
 func ParseFuncType(name string, data string) (FuncDef, error) {
 	switch name {
 	case "GET":
-		return NewFuncHttp("GET", data), nil
+		return NewFuncHttp("GET", data)
 	case "POST":
-		return NewFuncHttp("POST", data), nil
+		return NewFuncHttp("POST", data)
 	case "PUT":
-		return NewFuncHttp("PUT", data), nil
+		return NewFuncHttp("PUT", data)
 	case "CALL":
 		return NewFuncCall(data), nil
 	case "DATA":
@@ -59,6 +59,27 @@ func LookupFuncDef(name string) (FuncDef, FuncCalls, error) {
 	}
 
 	return nil, nil, nil
+}
+
+func GetUniqueHttpFuncs() (map[string]string, error) {
+	result := make(map[string]string)
+
+	for key, _ := range definitionTree.Funcs {
+		switch key.(type) {
+		case FuncHttp:
+			hf := key.(FuncHttp)
+
+			if _, ok := result[hf.host]; ok {
+				if result[hf.host] != hf.port {
+					return nil, fmt.Errorf("multiple ports on same host")
+				}
+			}
+
+			result[hf.host] = hf.port
+		}
+	}
+
+	return result, nil
 }
 
 func ParseFuncDef(key string) (FuncDef, error) {

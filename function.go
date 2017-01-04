@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"net"
 	"net/http"
 	"net/url"
 	"strings"
@@ -62,21 +63,35 @@ func (f FuncCall) Handle(w http.ResponseWriter, req *http.Request) {
 type FuncHttp struct {
 	method string
 	uri    string
+	url    *url.URL
+	host   string
+	port   string
 }
 
-func NewFuncHttp(method string, uri string) FuncHttp {
-	if !strings.Contains(uri, ":") {
-		uri = "http://" + uri
-		if u, err := url.Parse(uri); err == nil {
-			u.Host = u.Host + fmt.Sprintf(":%d", ListenPort)
-			uri = u.Host + u.Path
-		}
+func NewFuncHttp(method string, uri string) (FuncHttp, error) {
+	uri = "http://" + uri
+	url, err := url.Parse(uri)
+	if err != nil {
+		return FuncHttp{}, err
+	}
+
+	if !strings.Contains(url.Host, ":") {
+		url.Host = url.Host + fmt.Sprintf(":%d", ListenPort)
+		uri = url.Host + url.Path
+	}
+
+	host, port, err := net.SplitHostPort(url.Host)
+	if err != nil {
+		return FuncHttp{}, fmt.Errorf("Unable derive host and port from \"%s\"", url.Host)
 	}
 
 	return FuncHttp{
 		method: method,
 		uri:    uri,
-	}
+		url:    url,
+		host:   host,
+		port:   port,
+	}, nil
 }
 
 func (f FuncHttp) IsReference() bool { return true }
