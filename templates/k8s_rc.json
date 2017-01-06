@@ -22,10 +22,9 @@
                 "containers":[{
                     "name":"{{.Name}}",
                     "image":"tgraf/apisim:latest",
-                    "ports":[{
-                        "name":"apisim",
-                        "containerPort":{{.Port}}
-                    }]
+                    "ports":[
+                            {{.Ports}}
+                    ]
                 }]
             }
         }

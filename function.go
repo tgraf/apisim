@@ -69,8 +69,9 @@ func (f FuncCall) Handle(w http.ResponseWriter, req *http.Request) {
 type FuncHttp struct {
 	method string
 	uri    string
-	host   string
-	port   string
+	host   FuncHost
+	port   FuncPort
+	path   string
 }
 
 func NewFuncHttp(method string, uri string) (FuncHttp, error) {
@@ -80,7 +81,7 @@ func NewFuncHttp(method string, uri string) (FuncHttp, error) {
 	}
 
 	if !strings.Contains(url.Host, ":") {
-		url.Host = url.Host + fmt.Sprintf(":%d", ListenPort)
+		url.Host = url.Host + fmt.Sprintf(":%d", ConfigFuncPort)
 		uri = url.Host + url.Path
 	}
 
@@ -92,8 +93,9 @@ func NewFuncHttp(method string, uri string) (FuncHttp, error) {
 	return FuncHttp{
 		method: method,
 		uri:    uri,
-		host:   host,
-		port:   port,
+		host:   FuncHost(host),
+		port:   FuncPort(port),
+		path:   url.Path,
 	}, nil
 }
 
@@ -166,14 +168,14 @@ func Exploit(w http.ResponseWriter, req *http.Request, ownFunc FuncDef) int {
 	return calls
 }
 
-func (f FuncHttp) Ping(w http.ResponseWriter, req *http.Request) {
+func Ping(w http.ResponseWriter, req *http.Request, f FuncHttp) {
 	client := &http.Client{}
 
 	key := JSON(fmt.Sprintf("%s %s", f.method, f.uri))
 	url := fmt.Sprintf("http://%s", f.uri)
 	outReq, err := http.NewRequest(f.method, url, nil)
 	if err != nil {
-		fmt.Fprintf(w, "{%s: [%s]}", key, JSON(err.Error()))
+		fmt.Fprintf(w, "\t{%s: [%s]}", key, JSON(err.Error()))
 		return
 	}
 
@@ -181,9 +183,9 @@ func (f FuncHttp) Ping(w http.ResponseWriter, req *http.Request) {
 
 	_, err = client.Do(outReq)
 	if err != nil {
-		fmt.Fprintf(w, "{%s: %s}", key, JSON(err.Error()))
+		fmt.Fprintf(w, "\t{%s: %s}", key, JSON(err.Error()))
 	} else {
-		fmt.Fprintf(w, "{%s: %s}", key, JSON("OK"))
+		fmt.Fprintf(w, "\t{%s: %s}", key, JSON("OK"))
 	}
 }
 
@@ -193,20 +195,18 @@ func NeighborConnectivity(w http.ResponseWriter, req *http.Request, ownFunc Func
 
 	for k, _ := range funcs {
 		if k.String() == ownFunc.String() {
-			log.Infof("Ignoring function \"%s\" (own)", k.String())
 			continue
 		}
 		if funcInHeader(req, k.String()) {
-			log.Infof("Ignoring function \"%s\" (found in stack)", k.String())
 			continue
 		}
 
 		if calls > 0 {
-			fmt.Fprintf(w, ",")
+			fmt.Fprintf(w, ",\n")
 		}
 
 		calls++
-		funcs[k].Ping(w, req)
+		Ping(w, req, funcs[k])
 	}
 
 	return calls

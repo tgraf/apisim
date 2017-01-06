@@ -14,6 +14,9 @@ var (
 	definitionTree = NewFuncTree()
 )
 
+type FuncHost string
+type FuncPort string
+type FuncNode string // method + path, e.g. "GET /""
 type FuncDef interface {
 	IsReference() bool
 	Handle(w http.ResponseWriter, req *http.Request)
@@ -64,18 +67,19 @@ func LookupFuncDef(name string) (FuncDef, FuncCalls, error) {
 
 type HttpCallers []FuncHttp
 
-func (c HttpCallers) L4Callers() map[string]string {
-	result := make(map[string]string)
+func (c HttpCallers) L4Callers() map[FuncHost]FuncPort {
+	result := make(map[FuncHost]FuncPort)
 	for _, caller := range c {
 		result[caller.host] = caller.port
 	}
 	return result
 }
 
-func FindCallers(host string, port string) HttpCallers {
+func FindCallers(host FuncHost, port FuncPort) HttpCallers {
 	result := []FuncHttp{}
 
 	for key, _ := range definitionTree.Funcs {
+
 		switch key.(type) {
 		case FuncHttp:
 			httpFunc := key.(FuncHttp)
@@ -97,28 +101,35 @@ func FindCallers(host string, port string) HttpCallers {
 	return result
 }
 
-func GetUniqueHttpFuncs() (map[string]string, error) {
-	result := make(map[string]string)
+type ExternalFuncNode map[FuncNode]FuncCalls
+type ExternalFuncPort map[FuncPort]ExternalFuncNode
+type ExternalFuncTree map[FuncHost]ExternalFuncPort
 
-	for key, _ := range definitionTree.Funcs {
+func GetExternalFuncTree() ExternalFuncTree {
+	result := make(ExternalFuncTree)
+
+	for key, calls := range definitionTree.Funcs {
 		switch key.(type) {
 		case FuncHttp:
 			hf := key.(FuncHttp)
 
-			if _, ok := result[hf.host]; ok {
-				if result[hf.host] != hf.port {
-					return nil, fmt.Errorf("multiple ports on same host")
-				}
+			if _, ok := result[hf.host]; !ok {
+				result[hf.host] = make(ExternalFuncPort)
 			}
 
-			result[hf.host] = hf.port
+			if _, ok := result[hf.host][hf.port]; !ok {
+				result[hf.host][hf.port] = make(ExternalFuncNode)
+			}
+
+			node := FuncNode(hf.method + " " + hf.path)
+			result[hf.host][hf.port][node] = calls
 		}
 	}
 
-	return result, nil
+	return result
 }
 
-type HttpCalls map[string]map[string]FuncHttp
+type HttpCalls map[FuncHost]map[string]FuncHttp
 
 func GetUniqueHttpCalls() HttpCalls {
 	result := make(HttpCalls)

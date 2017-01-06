@@ -9,10 +9,9 @@
     },
     "spec":{
         "type": "NodePort",
-        "ports": [{
-            "port":{{.Port}},
-            "targetPort":"apisim"
-        }],
+        "ports": [
+                {{.Ports}}
+        ],
         "selector":{
             "app":"{{.Name}}"
         }
