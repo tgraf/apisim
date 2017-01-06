@@ -12,12 +12,13 @@ import (
 )
 
 var (
-	ListenPort int
-	configFile string
-	hostName   string
-	genSpec    bool
-	log        = logging.MustGetLogger("apisim")
-	CliCommand cli.Command
+	ListenPort   int
+	configFile   string
+	hostName     string
+	genSpec      bool
+	genNetPolicy bool
+	log          = logging.MustGetLogger("apisim")
+	CliCommand   cli.Command
 )
 
 func main() {
@@ -48,6 +49,11 @@ func main() {
 			Destination: &genSpec,
 			Name:        "generate-k8s-spec",
 			Usage:       "Generate k8s ReplicationController specs",
+		},
+		cli.BoolFlag{
+			Destination: &genNetPolicy,
+			Name:        "generate-k8s-net-policy",
+			Usage:       "Generate k8s NetworkPolicy specs",
 		},
 	}
 	app.Run(os.Args)
@@ -103,6 +109,11 @@ func run(cli *cli.Context) {
 
 	if genSpec {
 		GenerateSpecs()
+		return
+	}
+
+	if genNetPolicy {
+		GenerateNetPolicy()
 		return
 	}
 

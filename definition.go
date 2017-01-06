@@ -62,6 +62,41 @@ func LookupFuncDef(name string) (FuncDef, FuncCalls, error) {
 	return nil, nil, nil
 }
 
+type HttpCallers []FuncHttp
+
+func (c HttpCallers) L4Callers() map[string]string {
+	result := make(map[string]string)
+	for _, caller := range c {
+		result[caller.host] = caller.port
+	}
+	return result
+}
+
+func FindCallers(host string, port string) HttpCallers {
+	result := []FuncHttp{}
+
+	for key, _ := range definitionTree.Funcs {
+		switch key.(type) {
+		case FuncHttp:
+			httpFunc := key.(FuncHttp)
+
+			for _, call := range definitionTree.Funcs[key] {
+				switch call.(type) {
+				case FuncHttp:
+					httpCall := call.(FuncHttp)
+
+					if httpCall.host == host &&
+						httpCall.port == port {
+						result = append(result, httpFunc)
+					}
+				}
+			}
+		}
+	}
+
+	return result
+}
+
 func GetUniqueHttpFuncs() (map[string]string, error) {
 	result := make(map[string]string)
 

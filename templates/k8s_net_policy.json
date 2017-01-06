@@ -1,0 +1,25 @@
+{
+  "apiVersion": "extensions/v1beta1",
+  "kind": "NetworkPolicy",
+  "metadata": {
+    "annotations": {
+      "io.cilium.name": "{{.Name}}",
+      "io.cilium.parent": "io.cilium"
+    },
+    "name": "policy-{{.Name}}"
+  },
+  "spec": {
+    "podSelector": {
+      "matchLabels": {
+        "io.cilium.k8s.app": "{{.Name}}"
+      }
+    },
+    "ingress": [
+      {
+        "from": [
+{{.Policy}}
+        ]
+      }
+    ]
+  }
+}
