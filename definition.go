@@ -118,6 +118,34 @@ func GetUniqueHttpFuncs() (map[string]string, error) {
 	return result, nil
 }
 
+type HttpCalls map[string]map[string]FuncHttp
+
+func GetUniqueHttpCalls() HttpCalls {
+	result := make(HttpCalls)
+
+	for key := range definitionTree.Funcs {
+		switch key.(type) {
+		case FuncHttp:
+			hf := key.(FuncHttp)
+
+			if _, ok := result[hf.host]; !ok {
+				result[hf.host] = make(map[string]FuncHttp)
+			}
+
+			for _, call := range definitionTree.Funcs[key] {
+				switch call.(type) {
+				case FuncHttp:
+					c := call.(FuncHttp)
+					cKey := fmt.Sprintf("%s %s", c.method, c.uri)
+					result[hf.host][cKey] = c
+				}
+			}
+		}
+	}
+
+	return result
+}
+
 func (c FuncCalls) NonHttp() FuncCalls {
 	res := make(FuncCalls, 0)
 	for k := range c {

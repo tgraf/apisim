@@ -17,6 +17,7 @@ var (
 	hostName     string
 	genSpec      bool
 	genNetPolicy bool
+	genL7Policy  bool
 	log          = logging.MustGetLogger("apisim")
 	CliCommand   cli.Command
 )
@@ -54,6 +55,11 @@ func main() {
 			Destination: &genNetPolicy,
 			Name:        "generate-k8s-net-policy",
 			Usage:       "Generate k8s NetworkPolicy specs",
+		},
+		cli.BoolFlag{
+			Destination: &genL7Policy,
+			Name:        "generate-l7-policy",
+			Usage:       "Generate L7 policy",
 		},
 	}
 	app.Run(os.Args)
@@ -114,6 +120,11 @@ func run(cli *cli.Context) {
 
 	if genNetPolicy {
 		GenerateNetPolicy()
+		return
+	}
+
+	if genL7Policy {
+		GenerateL7Policy()
 		return
 	}
 
