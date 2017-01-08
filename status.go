@@ -36,6 +36,7 @@ func statusHandler(w http.ResponseWriter, req *http.Request) {
 	tree := GetExternalFuncTree()
 
 	calls := 0
+	fmt.Fprintf(w, "jsonCallback([\n")
 	for host, funcNode := range tree {
 		for port := range funcNode {
 			if calls > 0 {
@@ -68,6 +69,7 @@ func statusHandler(w http.ResponseWriter, req *http.Request) {
 			fmt.Fprintf(w, "]}")
 		}
 	}
+	fmt.Fprintf(w, "]);\n")
 }
 
 func runStatus(cli *cli.Context) {
