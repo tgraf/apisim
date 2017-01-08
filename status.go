@@ -33,15 +33,17 @@ func statusHandler(w http.ResponseWriter, req *http.Request) {
 	log.Infof("Status requested %+v", req)
 
 	funcs := make(map[FuncDef]FuncHttp)
-	for host, funcNode := range GetExternalFuncTree() {
-		for port := range funcNode {
-			uri := fmt.Sprintf("%s:%s/", host, port)
-			httpFunc, err := NewFuncHttp("GET", uri)
-			if err != nil {
-				continue
-			}
+	for host, funcPort := range GetExternalFuncTree() {
+		for port, funcNode := range funcPort {
+			for node := range funcNode {
+				uri := fmt.Sprintf("%s:%s%s", host, port, node.path)
+				httpFunc, err := NewFuncHttp(node.method, uri)
+				if err != nil {
+					continue
+				}
 
-			funcs[httpFunc] = httpFunc
+				funcs[httpFunc] = httpFunc
+			}
 		}
 	}
 

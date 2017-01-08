@@ -16,7 +16,10 @@ var (
 
 type FuncHost string
 type FuncPort string
-type FuncNode string // method + path, e.g. "GET /""
+type FuncNode struct {
+	method string
+	path   string
+}
 type FuncDef interface {
 	IsReference() bool
 	Handle(req *http.Request) string
@@ -121,7 +124,7 @@ func GetExternalFuncTree() ExternalFuncTree {
 				result[hf.host][hf.port] = make(ExternalFuncNode)
 			}
 
-			node := FuncNode(hf.method + " " + hf.path)
+			node := FuncNode{hf.method, hf.path}
 			result[hf.host][hf.port][node] = calls
 		}
 	}
