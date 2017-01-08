@@ -151,9 +151,9 @@ func FuncMux(funcs map[FuncDef]FuncHttp, inReq *http.Request, ownFunc FuncDef, r
 			defer wg.Done()
 			log.Infof("Scheduling %+v", key)
 			if key.String() == ownFunc.String() {
-				responses <- fmt.Sprintf("\t{%s: %s}", JSON(key.String()), JSON("NOP"))
+				responses <- fmt.Sprintf("{%s: %s}", JSON(key.String()), JSON("NOP"))
 			} else {
-				responses <- "\t" + reqFunc(funcs[key], inReq)
+				responses <- reqFunc(funcs[key], inReq)
 			}
 			log.Infof("Done with %+v", key)
 		}(key)

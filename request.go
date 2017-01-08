@@ -15,24 +15,24 @@ func doRequest(f FuncHttp, inReq *http.Request, readBody bool,
 		Timeout: timeout,
 	}
 
-	key := JSON(fmt.Sprintf("%s REQ %s", f.method, f.uri))
+	key := JSON(fmt.Sprintf("%s %s", f.method, f.uri))
 	url := fmt.Sprintf("http://%s", f.uri)
 	outReq, err := http.NewRequest(f.method, url, nil)
 	if err != nil {
-		return fmt.Sprintf("{%s: [%s]}", key, ErrorReport(err))
+		return fmt.Sprintf("{%s: %s}", ErrorReport(err))
 	}
 
 	hdrFunc(f, inReq, outReq)
 
 	resp, err := client.Do(outReq)
 	if err != nil {
-		return fmt.Sprintf("{%s: [%s]}", key, ErrorReport(err))
+		return fmt.Sprintf("{%s: %s}", key, ErrorReport(err))
 	} else if readBody {
 		buf := new(bytes.Buffer)
 		buf.ReadFrom(resp.Body)
-		return fmt.Sprintf("{%s: [%s]}", key, buf.String())
+		return fmt.Sprintf("{%s: %s}", key, buf.String())
 	} else {
-		return fmt.Sprintf("\t{%s: %s}", key, JSON("OK"))
+		return fmt.Sprintf("{%s: %s}", key, JSON("OK"))
 	}
 }
 

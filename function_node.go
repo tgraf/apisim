@@ -45,7 +45,7 @@ func handler(w http.ResponseWriter, req *http.Request) {
 	}
 
 	uri := host + req.URL.Path
-	result := fmt.Sprintf("{%s: [\n", JSON(fmt.Sprintf("%s RESP %s", req.Method, uri)))
+	result := "["
 
 	funcName := fmt.Sprintf("%s %s", req.Method, uri)
 	def, calls, err := LookupFuncDef(funcName)
@@ -71,7 +71,7 @@ func handler(w http.ResponseWriter, req *http.Request) {
 		result += calls.Handle(req)
 	}
 
-	result += "]}"
+	result += "]"
 	fmt.Fprint(w, PrettyJSON(result))
 
 }
