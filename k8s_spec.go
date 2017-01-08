@@ -120,11 +120,11 @@ func generateK8sSpec(cli *cli.Context) {
 		writeSpec(svcTmpl, c, string(host)+"_svc.spec", "Service")
 	}
 
-	ports := fmt.Sprintf("{\"containerPort\": %d, \"name\": \"apisim-status\"}", statusPort)
+	ports := fmt.Sprintf("{\"containerPort\": 8888, \"name\": \"apisim-status\"}")
 	c := TemplateConfig{"status", ports, "\"/go/bin/app\", \"status-server\""}
 	writeSpec(rcTmpl, c, "status_rc.spec", "ReplicationController")
 
-	ports = fmt.Sprintf("{\"port\": %d, \"targetPort\": \"apisim-status\"}", statusPort)
+	ports = fmt.Sprintf("{\"port\": 8888, \"targetPort\": \"apisim-status\"}")
 	c = TemplateConfig{"status", ports, ""}
 	writeSpec(svcTmpl, c, "status_svc.spec", "Service")
 }
