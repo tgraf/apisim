@@ -102,7 +102,9 @@ func NewFuncHttp(method string, uri string) (FuncHttp, error) {
 func (f FuncHttp) IsReference() bool { return true }
 func (f FuncHttp) String() string    { return fmt.Sprintf("%s %s", f.method, f.uri) }
 func (f FuncHttp) Handle(w http.ResponseWriter, req *http.Request) {
-	client := &http.Client{}
+	client := &http.Client{
+		Timeout: Timeout,
+	}
 
 	key := JSON(fmt.Sprintf("%s REQ %s", f.method, f.uri))
 	url := fmt.Sprintf("http://%s", f.uri)
@@ -169,7 +171,9 @@ func Exploit(w http.ResponseWriter, req *http.Request, ownFunc FuncDef) int {
 }
 
 func Ping(w http.ResponseWriter, req *http.Request, f FuncHttp) {
-	client := &http.Client{}
+	client := &http.Client{
+		Timeout: Timeout,
+	}
 
 	key := JSON(fmt.Sprintf("%s %s", f.method, f.uri))
 	url := fmt.Sprintf("http://%s", f.uri)

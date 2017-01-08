@@ -2,6 +2,7 @@ package main
 
 import (
 	"os"
+	"time"
 
 	"github.com/op/go-logging"
 	"github.com/urfave/cli"
@@ -12,6 +13,7 @@ var (
 	configFile     string
 	ConfigFuncPort int
 	CliCommand     cli.Command
+	Timeout        = 5 * time.Second
 )
 
 func main() {

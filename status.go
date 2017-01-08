@@ -43,7 +43,9 @@ func statusHandler(w http.ResponseWriter, req *http.Request) {
 			}
 
 			calls++
-			client := &http.Client{}
+			client := &http.Client{
+				Timeout: Timeout,
+			}
 
 			key := JSON(fmt.Sprintf("%s:%s", host, port))
 			url := fmt.Sprintf("http://%s:%s/", host, port)
