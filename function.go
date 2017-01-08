@@ -201,11 +201,6 @@ func NeighborConnectivity(w http.ResponseWriter, req *http.Request, ownFunc Func
 	calls := 0
 
 	for k, _ := range funcs {
-		if k.String() == ownFunc.String() {
-			calls++
-			fmt.Fprintf(w, "\t{%s: %s}", k.String(), JSON("NOP"))
-			continue
-		}
 		if funcInHeader(req, k.String()) {
 			continue
 		}
@@ -215,7 +210,11 @@ func NeighborConnectivity(w http.ResponseWriter, req *http.Request, ownFunc Func
 		}
 
 		calls++
-		Ping(w, req, funcs[k])
+		if k.String() == ownFunc.String() {
+			fmt.Fprintf(w, "\t{%s: %s}", k.String(), JSON("NOP"))
+		} else {
+			Ping(w, req, funcs[k])
+		}
 	}
 
 	return calls
