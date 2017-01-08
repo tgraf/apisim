@@ -22,6 +22,7 @@
                 "containers":[{
                     "name":"{{.Name}}",
                     "image":"tgraf/apisim:latest",
+		    "command": [{{.Command}}],
                     "ports":[
                             {{.Ports}}
                     ]

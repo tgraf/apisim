@@ -72,8 +72,9 @@ func generateK8sNetPolicy(cli *cli.Context) {
 }
 
 type TemplateConfig struct {
-	Name  FuncHost
-	Ports string
+	Name    FuncHost
+	Ports   string
+	Command string
 }
 
 func generateK8sSpec(cli *cli.Context) {
@@ -101,7 +102,7 @@ func generateK8sSpec(cli *cli.Context) {
 			nports++
 		}
 
-		c := TemplateConfig{host, ports}
+		c := TemplateConfig{host, ports, "\"/go/bin/app\", \"node-server\""}
 		writeSpec(rcTmpl, c, string(host)+"_rc.spec", "ReplicationController")
 
 		ports = ""
@@ -115,15 +116,15 @@ func generateK8sSpec(cli *cli.Context) {
 			nports++
 		}
 
-		c = TemplateConfig{host, ports}
+		c = TemplateConfig{host, ports, ""}
 		writeSpec(svcTmpl, c, string(host)+"_svc.spec", "Service")
 	}
 
 	ports := fmt.Sprintf("{\"containerPort\": %d, \"name\": \"apisim-status\"}", statusPort)
-	c := TemplateConfig{"status", ports}
+	c := TemplateConfig{"status", ports, "\"/go/bin/app\", \"status-server\""}
 	writeSpec(rcTmpl, c, "status_rc.spec", "ReplicationController")
 
 	ports = fmt.Sprintf("{\"port\": %d, \"targetPort\": \"apisim-status\"}", statusPort)
-	c = TemplateConfig{"status", ports}
+	c = TemplateConfig{"status", ports, ""}
 	writeSpec(svcTmpl, c, "status_svc.spec", "Service")
 }
