@@ -6,18 +6,24 @@
       "io.cilium.name": "k8s-app",
       "io.cilium.parent": "io.cilium.k8s"
     },
-    "name": "policy-{{.Name}}"
+    "name": "policy-status"
   },
   "spec": {
     "podSelector": {
       "matchLabels": {
-        "apisim":"{{.Name}}"
+        "apisim":"status"
       }
     },
     "ingress": [
       {
         "from": [
-{{.Policy}}
+          {
+            "podSelector": {
+              "matchLabels": {
+                "io.cilium.reserved": "host"
+              }
+            }
+          }
         ]
       }
     ]

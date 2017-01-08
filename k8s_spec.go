@@ -51,7 +51,7 @@ func generateK8sNetPolicy(cli *cli.Context) {
 	}
 
 	format := "{\n  \"podSelector\": {\n    \"matchLabels\": {\n"
-	format += "      \"io.cilium.k8s.app\": \"%s\"\n    }\n  }\n}"
+	format += "      \"apisim\": \"%s\"\n    }\n  }\n}"
 
 	for host, funcNode := range tree {
 		// status can reach all functions
@@ -119,12 +119,4 @@ func generateK8sSpec(cli *cli.Context) {
 		c = TemplateConfig{host, ports, ""}
 		writeSpec(svcTmpl, c, string(host)+"_svc.spec", "Service")
 	}
-
-	ports := fmt.Sprintf("{\"containerPort\": 8888, \"name\": \"apisim-status\"}")
-	c := TemplateConfig{"status", ports, "\"/go/bin/app\", \"status-server\""}
-	writeSpec(rcTmpl, c, "status_rc.spec", "ReplicationController")
-
-	ports = fmt.Sprintf("{\"port\": 8888, \"targetPort\": \"apisim-status\"}")
-	c = TemplateConfig{"status", ports, ""}
-	writeSpec(svcTmpl, c, "status_svc.spec", "Service")
 }

@@ -4,16 +4,15 @@
     "metadata":{
         "name":"{{.Name}}",
         "labels":{
-            "app":"{{.Name}}"
+            "k8s-app.apisim":"{{.Name}}"
         }
     },
     "spec":{
-        "type": "NodePort",
         "ports": [
                 {{.Ports}}
         ],
         "selector":{
-            "app":"{{.Name}}"
+            "k8s-app.apisim":"{{.Name}}"
         }
     }
 }

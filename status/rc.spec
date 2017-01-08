@@ -2,29 +2,32 @@
     "kind":"ReplicationController",
     "apiVersion":"v1",
     "metadata":{
-        "name":"{{.Name}}",
+        "name":"status",
         "labels":{
-            "k8s-app.apisim":"{{.Name}}"
+            "k8s-app.apisim":"status"
         }
     },
     "spec":{
         "replicas":1,
         "selector":{
-            "k8s-app.apisim":"{{.Name}}"
+          "k8s-app.apisim":"status"
         },
         "template":{
             "metadata":{
                 "labels":{
-		    "k8s-app.apisim":"{{.Name}}"
+                   "k8s-app.apisim":"status"
                 }
             },
             "spec":{
+                "nodeSelector":{
+                   "kubernetes.io/hostname": "worker2"
+		},
                 "containers":[{
-                    "name":"{{.Name}}",
+                    "name":"status",
                     "image":"tgraf/apisim:latest",
-		    "command": [{{.Command}}],
+		    "command": ["/go/bin/app", "status-server"],
                     "ports":[
-                            {{.Ports}}
+                            {"containerPort": 8888, "name": "apisim-status"}
                     ]
                 }]
             }
