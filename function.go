@@ -19,6 +19,10 @@ func JSON(text string) string {
 	return string(s)
 }
 
+func ErrorReport(err error) string {
+	return JSON("ERROR: " + err.Error())
+}
+
 type FuncData struct {
 	data string
 }
@@ -110,7 +114,7 @@ func (f FuncHttp) Handle(w http.ResponseWriter, req *http.Request) {
 	url := fmt.Sprintf("http://%s", f.uri)
 	outReq, err := http.NewRequest(f.method, url, nil)
 	if err != nil {
-		fmt.Fprintf(w, "{%s: [%s]}", key, JSON(err.Error()))
+		fmt.Fprintf(w, "{%s: [%s]}", key, ErrorReport(err))
 		return
 	}
 
@@ -124,7 +128,7 @@ func (f FuncHttp) Handle(w http.ResponseWriter, req *http.Request) {
 
 	resp, err := client.Do(outReq)
 	if err != nil {
-		fmt.Fprintf(w, "{%s: [%s]}", key, JSON(err.Error()))
+		fmt.Fprintf(w, "{%s: [%s]}", key, ErrorReport(err))
 	} else {
 		fmt.Fprintf(w, "{%s: [", key)
 		io.Copy(w, resp.Body)
@@ -178,7 +182,7 @@ func Ping(w http.ResponseWriter, req *http.Request, f FuncHttp) {
 	url := fmt.Sprintf("http://%s", f.uri)
 	outReq, err := http.NewRequest(f.method, url, nil)
 	if err != nil {
-		fmt.Fprintf(w, "\t{%s: [%s]}", key, JSON(err.Error()))
+		fmt.Fprintf(w, "\t{%s: [%s]}", key, ErrorReport(err))
 		return
 	}
 
@@ -186,7 +190,7 @@ func Ping(w http.ResponseWriter, req *http.Request, f FuncHttp) {
 
 	_, err = client.Do(outReq)
 	if err != nil {
-		fmt.Fprintf(w, "\t{%s: %s}", key, JSON(err.Error()))
+		fmt.Fprintf(w, "\t{%s: %s}", key, ErrorReport(err))
 	} else {
 		fmt.Fprintf(w, "\t{%s: %s}", key, JSON("OK"))
 	}
@@ -198,6 +202,8 @@ func NeighborConnectivity(w http.ResponseWriter, req *http.Request, ownFunc Func
 
 	for k, _ := range funcs {
 		if k.String() == ownFunc.String() {
+			calls++
+			fmt.Fprintf(w, "\t{%s: %s}", k.String(), JSON("NOP"))
 			continue
 		}
 		if funcInHeader(req, k.String()) {

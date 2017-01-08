@@ -50,9 +50,9 @@ func handler(w http.ResponseWriter, req *http.Request) {
 	funcName := fmt.Sprintf("%s %s", req.Method, uri)
 	def, calls, err := LookupFuncDef(funcName)
 	if err != nil {
-		fmt.Fprintf(w, "%s", JSON(err.Error()))
+		fmt.Fprintf(w, "%s", ErrorReport(err))
 	} else if def == nil {
-		fmt.Fprintf(w, "%s", JSON(fmt.Sprintf("Function %s not found", funcName)))
+		fmt.Fprintf(w, "%s", ErrorReport(fmt.Errorf("Function %s not found", funcName)))
 	} else if req.Header.Get("NeighborConnectivity") != "" {
 		log.Infof("Function %+v neighbor connectivity", def)
 		NeighborConnectivity(w, req, def)

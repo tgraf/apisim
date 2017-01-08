@@ -52,7 +52,7 @@ func statusHandler(w http.ResponseWriter, req *http.Request) {
 			url := fmt.Sprintf("http://%s:%s/", host, port)
 			outReq, err := http.NewRequest("GET", url, nil)
 			if err != nil {
-				fmt.Fprintf(w, "{%s: [%s]}", key, JSON(err.Error()))
+				fmt.Fprintf(w, "{%s: [%s]}", key, ErrorReport(err))
 				return
 			}
 
@@ -60,7 +60,7 @@ func statusHandler(w http.ResponseWriter, req *http.Request) {
 
 			resp, err := client.Do(outReq)
 			if err != nil {
-				fmt.Fprintf(w, "{%s: [%s]}", key, JSON(err.Error()))
+				fmt.Fprintf(w, "{%s: [%s]}", key, ErrorReport(err))
 			} else {
 				fmt.Fprintf(w, "{%s: [\n", key)
 				io.Copy(w, resp.Body)
