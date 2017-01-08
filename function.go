@@ -125,12 +125,11 @@ func (f FuncHttp) Handle(w http.ResponseWriter, req *http.Request) {
 	resp, err := client.Do(outReq)
 	if err != nil {
 		fmt.Fprintf(w, "{%s: [%s]}", key, JSON(err.Error()))
-		return
+	} else {
+		fmt.Fprintf(w, "{%s: [", key)
+		io.Copy(w, resp.Body)
+		fmt.Fprintf(w, "]}")
 	}
-
-	fmt.Fprintf(w, "{%s: [", key)
-	io.Copy(w, resp.Body)
-	fmt.Fprintf(w, "]}")
 }
 
 func funcInHeader(req *http.Request, name string) bool {

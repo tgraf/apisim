@@ -45,7 +45,7 @@ func statusHandler(w http.ResponseWriter, req *http.Request) {
 
 			calls++
 			client := &http.Client{
-				Timeout: Timeout,
+				Timeout: Timeout * 20,
 			}
 
 			key := JSON(fmt.Sprintf("%s:%s", host, port))
@@ -61,12 +61,11 @@ func statusHandler(w http.ResponseWriter, req *http.Request) {
 			resp, err := client.Do(outReq)
 			if err != nil {
 				fmt.Fprintf(w, "{%s: [%s]}", key, JSON(err.Error()))
-				return
+			} else {
+				fmt.Fprintf(w, "{%s: [\n", key)
+				io.Copy(w, resp.Body)
+				fmt.Fprintf(w, "]}")
 			}
-
-			fmt.Fprintf(w, "{%s: [\n", key)
-			io.Copy(w, resp.Body)
-			fmt.Fprintf(w, "]}")
 		}
 	}
 	fmt.Fprintf(w, "]);\n")
