@@ -3,11 +3,11 @@ package main
 import (
 	"encoding/json"
 	"fmt"
-	"io"
 	"net"
 	"net/http"
 	"net/url"
 	"strings"
+	"sync"
 )
 
 var (
@@ -33,8 +33,8 @@ func NewFuncData(data string) FuncData {
 
 func (f FuncData) IsReference() bool { return false }
 func (f FuncData) String() string    { return "DATA " + f.data }
-func (f FuncData) Handle(w http.ResponseWriter, req *http.Request) {
-	fmt.Fprintf(w, "{\"DATA\": %s}", JSON(f.data))
+func (f FuncData) Handle(req *http.Request) string {
+	return fmt.Sprintf("{\"DATA\": %s}", JSON(f.data))
 }
 
 type FuncCall struct {
@@ -45,29 +45,30 @@ func NewFuncCall(name string) FuncCall {
 	return FuncCall{name: name}
 }
 
-func (c FuncCalls) Handle(w http.ResponseWriter, req *http.Request) {
-	for k := range c {
-		c[k].Handle(w, req)
-		if k != len(c)-1 {
-			fmt.Fprintf(w, ",")
+func (c FuncCalls) Handle(req *http.Request) string {
+	reply := FuncMux(c.Http(), req, FuncHttp{}, HttpRequest)
+
+	for k := range c.NonHttp() {
+		if reply != "" {
+			reply += ","
 		}
+		reply += c[k].Handle(req)
 	}
+
+	return reply
 }
 
 func (f FuncCall) IsReference() bool { return true }
 func (f FuncCall) String() string    { return "CALL " + f.name }
-func (f FuncCall) Handle(w http.ResponseWriter, req *http.Request) {
+func (f FuncCall) Handle(req *http.Request) string {
 	key := JSON(fmt.Sprintf("CALL %s", f.name))
 
 	calls, ok := definitionTree.Funcs[f]
 	if !ok {
-		fmt.Fprintf(w, "{%s: [\"Function not found\"]}", key)
-		return
+		return fmt.Sprintf("{%s: [\"Function not found\"]}", key)
 	}
 
-	fmt.Fprintf(w, "{%s: [", key)
-	calls.Handle(w, req)
-	fmt.Fprintf(w, "]}")
+	return fmt.Sprintf("{%s: [%s]}", key, calls.Handle(req))
 }
 
 type FuncHttp struct {
@@ -105,38 +106,11 @@ func NewFuncHttp(method string, uri string) (FuncHttp, error) {
 
 func (f FuncHttp) IsReference() bool { return true }
 func (f FuncHttp) String() string    { return fmt.Sprintf("%s %s", f.method, f.uri) }
-func (f FuncHttp) Handle(w http.ResponseWriter, req *http.Request) {
-	client := &http.Client{
-		Timeout: Timeout,
-	}
-
-	key := JSON(fmt.Sprintf("%s REQ %s", f.method, f.uri))
-	url := fmt.Sprintf("http://%s", f.uri)
-	outReq, err := http.NewRequest(f.method, url, nil)
-	if err != nil {
-		fmt.Fprintf(w, "{%s: [%s]}", key, ErrorReport(err))
-		return
-	}
-
-	if req.Header.Get("Exploit") != "" {
-		outReq.Header.Set("Exploit", "True")
-	}
-
-	hdrList, _ := req.Header[FuncStackHeader]
-	hdrList = append(hdrList, f.String())
-	outReq.Header[FuncStackHeader] = hdrList
-
-	resp, err := client.Do(outReq)
-	if err != nil {
-		fmt.Fprintf(w, "{%s: [%s]}", key, ErrorReport(err))
-	} else {
-		fmt.Fprintf(w, "{%s: [", key)
-		io.Copy(w, resp.Body)
-		fmt.Fprintf(w, "]}")
-	}
+func (f FuncHttp) Handle(req *http.Request) string {
+	return HttpRequest(f, req)
 }
 
-func funcInHeader(req *http.Request, name string) bool {
+func FuncInHeader(req *http.Request, name string) bool {
 	if hdrList, ok := req.Header[FuncStackHeader]; ok {
 		for _, v := range hdrList {
 			if v == name {
@@ -148,74 +122,53 @@ func funcInHeader(req *http.Request, name string) bool {
 	return false
 }
 
-func Exploit(w http.ResponseWriter, req *http.Request, ownFunc FuncDef) int {
-	funcs := GetHttpFuncs()
-	calls := 0
+type RequestFunc func(http FuncHttp, inReq *http.Request) string
 
-	for k, _ := range funcs {
-		if k.String() == ownFunc.String() {
-			log.Infof("Ignoring function \"%s\" (own)", k.String())
-			continue
-		}
-		if funcInHeader(req, k.String()) {
-			log.Infof("Ignoring function \"%s\" (found in stack)", k.String())
-			continue
-		}
+func FuncMux(funcs map[FuncDef]FuncHttp, inReq *http.Request, ownFunc FuncDef, reqFunc RequestFunc) string {
+	responses := make(chan string, 32)
+	var wg sync.WaitGroup
 
-		if calls > 0 {
-			fmt.Fprintf(w, ",")
-		}
+	nreplies := len(funcs)
+	if nreplies == 0 {
+		return ""
+	}
+	log.Infof("Waiting for %d responses", nreplies)
+	wg.Add(nreplies)
 
-		calls++
-		funcs[k].Handle(w, req)
+	for key := range funcs {
+		go func(key FuncDef) {
+			defer wg.Done()
+			log.Infof("Scheduling %+v", key)
+			if key.String() == ownFunc.String() {
+				responses <- fmt.Sprintf("\t{%s: %s}", JSON(key.String()), JSON("NOP"))
+			} else {
+				responses <- "\t" + reqFunc(funcs[key], inReq)
+			}
+			log.Infof("Done with %+v", key)
+		}(key)
 	}
 
-	return calls
+	wg.Wait()
+	log.Infof("Reading responses")
+
+	ret := ""
+	for i := 0; i < nreplies; i++ {
+		str := <-responses
+		if i > 0 {
+			ret += ",\n"
+		}
+		ret += str
+	}
+
+	log.Infof("Read all responses")
+
+	return ret
 }
 
-func Ping(w http.ResponseWriter, req *http.Request, f FuncHttp) {
-	client := &http.Client{
-		Timeout: Timeout,
-	}
-
-	key := JSON(fmt.Sprintf("%s %s", f.method, f.uri))
-	url := fmt.Sprintf("http://%s", f.uri)
-	outReq, err := http.NewRequest(f.method, url, nil)
-	if err != nil {
-		fmt.Fprintf(w, "\t{%s: [%s]}", key, ErrorReport(err))
-		return
-	}
-
-	outReq.Header.Set("NoOperation", "True")
-
-	_, err = client.Do(outReq)
-	if err != nil {
-		fmt.Fprintf(w, "\t{%s: %s}", key, ErrorReport(err))
-	} else {
-		fmt.Fprintf(w, "\t{%s: %s}", key, JSON("OK"))
-	}
+func Exploit(req *http.Request, ownFunc FuncDef) string {
+	return FuncMux(GetHttpFuncs(req), req, ownFunc, HttpRequest)
 }
 
-func NeighborConnectivity(w http.ResponseWriter, req *http.Request, ownFunc FuncDef) int {
-	funcs := GetHttpFuncs()
-	calls := 0
-
-	for k, _ := range funcs {
-		if funcInHeader(req, k.String()) {
-			continue
-		}
-
-		if calls > 0 {
-			fmt.Fprintf(w, ",\n")
-		}
-
-		calls++
-		if k.String() == ownFunc.String() {
-			fmt.Fprintf(w, "\t{%s: %s}", JSON(k.String()), JSON("NOP"))
-		} else {
-			Ping(w, req, funcs[k])
-		}
-	}
-
-	return calls
+func NeighborConnectivity(req *http.Request, ownFunc FuncDef) string {
+	return FuncMux(GetHttpFuncs(req), req, ownFunc, PingRequest)
 }

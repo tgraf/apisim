@@ -19,7 +19,7 @@ type FuncPort string
 type FuncNode string // method + path, e.g. "GET /""
 type FuncDef interface {
 	IsReference() bool
-	Handle(w http.ResponseWriter, req *http.Request)
+	Handle(req *http.Request) string
 	String() string
 }
 
@@ -171,12 +171,30 @@ func (c FuncCalls) NonHttp() FuncCalls {
 	return res
 }
 
-func GetHttpFuncs() map[FuncDef]FuncHttp {
+func (c FuncCalls) Http() map[FuncDef]FuncHttp {
+	res := make(map[FuncDef]FuncHttp)
+	for k := range c {
+		key := c[k]
+		switch key.(type) {
+		case FuncHttp:
+			res[key] = key.(FuncHttp)
+		}
+	}
+
+	return res
+}
+
+func GetHttpFuncs(req *http.Request) map[FuncDef]FuncHttp {
 	result := make(map[FuncDef]FuncHttp)
 
 	for key, _ := range definitionTree.Funcs {
 		switch key.(type) {
 		case FuncHttp:
+			// If req is provided, ignored funcs in the stack
+			if req != nil && FuncInHeader(req, key.String()) {
+				log.Infof("Ignoring recursive call %v", key)
+				continue
+			}
 			result[key] = key.(FuncHttp)
 		}
 	}

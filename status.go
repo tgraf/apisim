@@ -2,7 +2,6 @@ package main
 
 import (
 	"fmt"
-	"io"
 	"net/http"
 	"os"
 	"os/signal"
@@ -33,42 +32,21 @@ var (
 func statusHandler(w http.ResponseWriter, req *http.Request) {
 	log.Infof("Status requested %+v", req)
 
-	tree := GetExternalFuncTree()
-
-	calls := 0
-	fmt.Fprintf(w, "jsonCallback([\n")
-	for host, funcNode := range tree {
+	funcs := make(map[FuncDef]FuncHttp)
+	for host, funcNode := range GetExternalFuncTree() {
 		for port := range funcNode {
-			if calls > 0 {
-				fmt.Fprintf(w, ",\n")
-			}
-
-			calls++
-			client := &http.Client{
-				Timeout: Timeout * 20,
-			}
-
-			key := JSON(fmt.Sprintf("%s:%s", host, port))
-			url := fmt.Sprintf("http://%s:%s/", host, port)
-			outReq, err := http.NewRequest("GET", url, nil)
+			uri := fmt.Sprintf("%s:%s/", host, port)
+			httpFunc, err := NewFuncHttp("GET", uri)
 			if err != nil {
-				fmt.Fprintf(w, "{%s: [%s]}", key, ErrorReport(err))
-				return
+				continue
 			}
 
-			outReq.Header.Set("NeighborConnectivity", "True")
-
-			resp, err := client.Do(outReq)
-			if err != nil {
-				fmt.Fprintf(w, "{%s: [%s]}", key, ErrorReport(err))
-			} else {
-				fmt.Fprintf(w, "{%s: [\n", key)
-				io.Copy(w, resp.Body)
-				fmt.Fprintf(w, "]}")
-			}
+			funcs[httpFunc] = httpFunc
 		}
 	}
-	fmt.Fprintf(w, "]);\n")
+
+	result := FuncMux(funcs, req, FuncHttp{}, NeighborRequest)
+	fmt.Fprintf(w, "jsonCallback([\n%s\n]);\n", result)
 }
 
 func runStatus(cli *cli.Context) {
