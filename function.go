@@ -211,7 +211,7 @@ func NeighborConnectivity(w http.ResponseWriter, req *http.Request, ownFunc Func
 
 		calls++
 		if k.String() == ownFunc.String() {
-			fmt.Fprintf(w, "\t{%s: %s}", k.String(), JSON("NOP"))
+			fmt.Fprintf(w, "\t{%s: %s}", JSON(k.String()), JSON("NOP"))
 		} else {
 			Ping(w, req, funcs[k])
 		}
