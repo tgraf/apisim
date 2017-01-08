@@ -45,33 +45,35 @@ func handler(w http.ResponseWriter, req *http.Request) {
 	}
 
 	uri := host + req.URL.Path
-	fmt.Fprintf(w, "{%s: [\n", JSON(fmt.Sprintf("%s RESP %s", req.Method, uri)))
+	result := fmt.Sprintf("{%s: [\n", JSON(fmt.Sprintf("%s RESP %s", req.Method, uri)))
 
 	funcName := fmt.Sprintf("%s %s", req.Method, uri)
 	def, calls, err := LookupFuncDef(funcName)
 	if err != nil {
-		fmt.Fprint(w, ErrorReport(err))
+		result += ErrorReport(err)
 	} else if def == nil {
-		fmt.Fprint(w, ErrorReport(fmt.Errorf("Function %s not found", funcName)))
+		result += ErrorReport(fmt.Errorf("Function %s not found", funcName))
 	} else if req.Header.Get("NeighborConnectivity") != "" {
 		log.Infof("Function %+v neighbor connectivity", def)
-		fmt.Fprint(w, NeighborConnectivity(req, def))
+		result += NeighborConnectivity(req, def)
 	} else if req.Header.Get("Exploit") != "" {
 		log.Infof("Function %+v being exploited", def)
 		exploitCalls := Exploit(req, def)
-		fmt.Fprint(w, exploitCalls)
+		result += exploitCalls
 
 		nonHttpCalls := calls.NonHttp()
 		if len(nonHttpCalls) > 0 && exploitCalls != "" {
-			fmt.Fprint(w, ",")
+			result += ","
 		}
-		fmt.Fprint(w, nonHttpCalls.Handle(req))
+		result += nonHttpCalls.Handle(req)
 	} else {
 		log.Infof("Function %+v calls: %+v", def, calls)
-		fmt.Fprint(w, calls.Handle(req))
+		result += calls.Handle(req)
 	}
 
-	fmt.Fprint(w, "]}")
+	result += "]}"
+	fmt.Fprint(w, PrettyJSON(result))
+
 }
 
 func runNode(cli *cli.Context) {

@@ -45,8 +45,8 @@ func statusHandler(w http.ResponseWriter, req *http.Request) {
 		}
 	}
 
-	result := FuncMux(funcs, req, FuncHttp{}, NeighborRequest)
-	fmt.Fprintf(w, "jsonCallback([\n%s\n]);\n", result)
+	result := "[" + FuncMux(funcs, req, FuncHttp{}, NeighborRequest) + "]"
+	fmt.Fprintf(w, "jsonCallback(%s);\n", PrettyJSON(result))
 }
 
 func runStatus(cli *cli.Context) {

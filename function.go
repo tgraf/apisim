@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
 	"net"
@@ -17,6 +18,16 @@ var (
 func JSON(text string) string {
 	s, _ := json.Marshal(text)
 	return string(s)
+}
+
+func PrettyJSON(body string) string {
+	var prettyJSON bytes.Buffer
+	err := json.Indent(&prettyJSON, []byte(body), "", "\t")
+	if err != nil {
+		return JSON(fmt.Sprintf("JSON parse error: %s", err))
+	} else {
+		return string(prettyJSON.Bytes())
+	}
 }
 
 func ErrorReport(err error) string {
