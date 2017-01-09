@@ -13,7 +13,7 @@ var (
 	configFile     string
 	ConfigFuncPort int
 	CliCommand     cli.Command
-	Timeout        = 5 * time.Second
+	Timeout        = 20 * time.Second
 )
 
 func main() {
