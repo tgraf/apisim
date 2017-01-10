@@ -1,12 +1,12 @@
 {
 	"Functions": {
-		"GET serviceA/": [ "GET serviceA/path1", "PUT serviceA/path2" ],
-		"GET serviceA/path1": [ ],
-		"PUT serviceA/path2": [ "POST serviceA/", "GET serviceB/", "GET serviceC/" ],
-		"POST serviceA/": [ "GET serviceA/" ],
-		"GET serviceB/": [ "GET serviceC/" ],
-		"GET serviceC/": [],
-		"GET serviceC/path1": [],
-		"GET serviceC/path2": []
+		"GET function-a/": [ "GET function-a/path1", "PUT function-a/path2" ],
+		"GET function-a/path1": [ ],
+		"PUT function-a/path2": [ "POST function-a/", "GET function-b/", "GET function-c/" ],
+		"POST function-a/": [ "GET function-a/" ],
+		"GET function-b/": [ "GET function-c/" ],
+		"GET function-c/": [],
+		"GET function-c/path1": [],
+		"GET function-c/path2": []
 	}
 }
