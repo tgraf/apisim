@@ -1,11 +1,12 @@
 {
 	"Functions": {
-		"GET foo/": [ "GET foo/foo", "PUT foo/bar" ],
-		"GET foo/foo": [ "CALL lookup_data" ],
-		"PUT foo/bar": [ "POST foo/baz", "GET bar/", "GET baz/" ],
-		"POST foo/baz": [ "GET foo/foo" ],
-		"GET bar/": [ "GET baz/" ],
-		"GET baz/": [],
-		"CALL lookup_data": [ "DATA SET1", "DATA SET2", "DATA SET3" ]
+		"GET serviceA/": [ "GET serviceA/path1", "PUT serviceA/path2" ],
+		"GET serviceA/path1": [ ],
+		"PUT serviceA/path2": [ "POST serviceA/", "GET serviceB/", "GET serviceC/" ],
+		"POST serviceA/": [ "GET serviceA/" ],
+		"GET serviceB/": [ "GET serviceC/" ],
+		"GET serviceC/": [],
+		"GET serviceC/path1": [],
+		"GET serviceC/path2": []
 	}
 }
