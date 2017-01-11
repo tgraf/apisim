@@ -1,12 +1,12 @@
 {
 	"Functions": {
-		"GET function-a/": [ "GET function-a/path1", "PUT function-a/path2" ],
-		"GET function-a/path1": [ ],
-		"PUT function-a/path2": [ "POST function-a/", "GET function-b/", "GET function-c/" ],
-		"POST function-a/": [ "GET function-a/" ],
-		"GET function-b/": [ "GET function-c/" ],
-		"GET function-c/": [],
-		"GET function-c/path1": [],
-		"GET function-c/path2": []
+		"GET foo/": [ "GET foo/path1", "PUT foo/path2" ],
+		"GET foo/path1": [ ],
+		"PUT foo/path2": [ "POST foo/", "GET bar/", "GET baz/" ],
+		"POST foo/": [ "GET foo/" ],
+		"GET bar/": [ "GET baz/" ],
+		"GET baz/": [],
+		"GET baz/path1": [],
+		"GET baz/path2": []
 	}
 }
