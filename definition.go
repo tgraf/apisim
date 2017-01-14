@@ -68,6 +68,18 @@ func LookupFuncDef(name string) (FuncDef, FuncCalls, error) {
 	return nil, nil, nil
 }
 
+func IsCaller(caller FuncDef, callee FuncDef) bool {
+	if calls, ok := definitionTree.Funcs[caller]; ok {
+		for _, key := range calls {
+			if key.String() == callee.String() {
+				return true
+			}
+		}
+	}
+
+	return false
+}
+
 type HttpCallers []FuncHttp
 
 func (c HttpCallers) L4Callers() map[FuncHost]FuncPort {

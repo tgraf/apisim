@@ -9,7 +9,7 @@ import (
 
 type HeaderChangeFunc func(f FuncHttp, inReq *http.Request, outReq *http.Request)
 
-func doRequest(f FuncHttp, inReq *http.Request, readBody bool,
+func doRequest(ownFunc FuncDef, f FuncHttp, inReq *http.Request, readBody bool,
 	hdrFunc HeaderChangeFunc, timeout time.Duration) string {
 	client := &http.Client{
 		Timeout: timeout,
@@ -32,7 +32,11 @@ func doRequest(f FuncHttp, inReq *http.Request, readBody bool,
 		buf.ReadFrom(resp.Body)
 		return fmt.Sprintf("{%s: %s}", key, buf.String())
 	} else {
-		return fmt.Sprintf("{%s: %s}", key, JSON("OK"))
+		if IsCaller(ownFunc, f) {
+			return fmt.Sprintf("{%s: %s}", key, JSON("OK"))
+		} else {
+			return fmt.Sprintf("{%s: %s}", key, JSON("VULN"))
+		}
 	}
 }
 
@@ -40,8 +44,8 @@ func pingHeader(f FuncHttp, inReq *http.Request, outReq *http.Request) {
 	outReq.Header.Set("NoOperation", "True")
 }
 
-func PingRequest(f FuncHttp, inReq *http.Request) string {
-	return doRequest(f, inReq, false, pingHeader, Timeout)
+func PingRequest(ownFunc FuncDef, f FuncHttp, inReq *http.Request) string {
+	return doRequest(ownFunc, f, inReq, false, pingHeader, Timeout)
 }
 
 func requestHeader(f FuncHttp, inReq *http.Request, outReq *http.Request) {
@@ -54,14 +58,14 @@ func requestHeader(f FuncHttp, inReq *http.Request, outReq *http.Request) {
 	outReq.Header[FuncStackHeader] = hdrList
 }
 
-func HttpRequest(f FuncHttp, inReq *http.Request) string {
-	return doRequest(f, inReq, true, requestHeader, Timeout*4)
+func HttpRequest(ownFunc FuncDef, f FuncHttp, inReq *http.Request) string {
+	return doRequest(ownFunc, f, inReq, true, requestHeader, Timeout*4)
 }
 
 func neighborHeader(f FuncHttp, inReq *http.Request, outReq *http.Request) {
 	outReq.Header.Set("NeighborConnectivity", "True")
 }
 
-func NeighborRequest(f FuncHttp, inReq *http.Request) string {
-	return doRequest(f, inReq, true, neighborHeader, Timeout*4)
+func NeighborRequest(ownFunc FuncDef, f FuncHttp, inReq *http.Request) string {
+	return doRequest(ownFunc, f, inReq, true, neighborHeader, Timeout*4)
 }

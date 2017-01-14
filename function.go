@@ -118,7 +118,7 @@ func NewFuncHttp(method string, uri string) (FuncHttp, error) {
 func (f FuncHttp) IsReference() bool { return true }
 func (f FuncHttp) String() string    { return fmt.Sprintf("%s %s", f.method, f.uri) }
 func (f FuncHttp) Handle(req *http.Request) string {
-	return HttpRequest(f, req)
+	return HttpRequest(FuncHttp{}, f, req)
 }
 
 func FuncInHeader(req *http.Request, name string) bool {
@@ -133,7 +133,7 @@ func FuncInHeader(req *http.Request, name string) bool {
 	return false
 }
 
-type RequestFunc func(http FuncHttp, inReq *http.Request) string
+type RequestFunc func(ownFunc FuncDef, http FuncHttp, inReq *http.Request) string
 
 func FuncMux(funcs map[FuncDef]FuncHttp, inReq *http.Request, ownFunc FuncDef, reqFunc RequestFunc) string {
 	responses := make(chan string, 32)
@@ -153,7 +153,7 @@ func FuncMux(funcs map[FuncDef]FuncHttp, inReq *http.Request, ownFunc FuncDef, r
 			if key.String() == ownFunc.String() {
 				responses <- fmt.Sprintf("{%s: %s}", JSON(key.String()), JSON("NOP"))
 			} else {
-				responses <- reqFunc(funcs[key], inReq)
+				responses <- reqFunc(ownFunc, funcs[key], inReq)
 			}
 			log.Infof("Done with %+v", key)
 		}(key)
